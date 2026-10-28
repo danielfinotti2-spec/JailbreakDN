@@ -1,21 +1,17 @@
-/* Cena 3D — painel ambiental monocromático.
+/* Cena 3D — o pato mascote em nuvem de pontos.
 
-    O site não tem hero nem decoração solta; este painel é a exceção
-    consciente, embutida no "Como funciona" como um respiro técnico:
-    um torus knot em wireframe (o "nó do cofre") dentro de uma casca
-    de partículas, tudo em --ink sobre fundo transparente.
+    O centro da cena é a PRÓPRIA logo: os pixels de pato-mascote.png
+    são amostrados num canvas offscreen e viram pontos 3D com
+    profundidade. Cada ponto nasce disperso numa casca esférica e
+    converge para o lugar da silhueta — a logo se "monta" no ar e
+    fica girando em profundidade real em volta do eixo Y.
 
     Regras da casa respeitadas:
-    - monocromático: a cor vem do token --ink do tema vigente e é
-      re-lida quando o tema troca (dark/light), nunca cor de acento;
-    - movimento estrutural: rotação lenta constante + tilt que segue
-      o ponteiro com amortecimento exponencial;
-    - entrada por escala via GSAP, mesma gramática de lib/animacoes;
-    - sem WebGL ou prefers-reduced-motion: renderiza NADA (o painel
-      some em vez de virar quadro parado);
-    - frameloop pausa quando o painel sai da tela ou a aba fica oculta;
-    - chunk separado: o import em ComoFunciona é React.lazy, então o
-      three só baixa quando a home monta a seção. */
+    - monocromático: cor vem do token --ink (re-lida na troca de tema);
+    - sem WebGL ou prefers-reduced-motion: o painel não existe;
+    - frameloop pausa fora da tela ou com a aba oculta;
+    - lazy chunk via React.lazy no "Como funciona";
+    - jitter determinístico (sem Math.random): mesma cena a cada visita. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -46,35 +42,136 @@ function useCorTema(): string {
   return cor;
 }
 
-/** O nó: wireframe girando devagar, sem brilho, sem cor própria. */
-function No({ cor }: { cor: string }) {
-  const malha = useRef<THREE.Mesh>(null!);
+/* ---------------------------------------------------------------
+   Amostragem da logo
+   --------------------------------------------------------------- */
+
+interface PontosPato {
+  alvo: Float32Array; // silhueta da logo, extrudada em z
+  origem: Float32Array; // dispersão esférica inicial
+}
+
+function amostrarImagem(src: string): Promise<PontosPato | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const ALTURA = 110;
+      const razao = img.width / img.height || 1;
+      const w = Math.max(8, Math.round(ALTURA * razao));
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = ALTURA;
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return resolve(null);
+      ctx.drawImage(img, 0, 0, w, ALTURA);
+      const { data } = ctx.getImageData(0, 0, w, ALTURA);
+
+      const opacos: number[] = [];
+      for (let y = 0; y < ALTURA; y++) {
+        for (let x = 0; x < w; x++) {
+          if (data[(y * w + x) * 4 + 3] > 128) opacos.push(x, y);
+        }
+      }
+      const N = opacos.length / 2;
+      if (!N) return resolve(null);
+
+      const alvo = new Float32Array(N * 3);
+      const origem = new Float32Array(N * 3);
+      const escala = 4.6 / w; // largura total ~4.6 unidades de cena
+
+      for (let i = 0; i < N; i++) {
+        // Silhueta: canvas tem y pra baixo, three pra cima — inverte.
+        alvo[i * 3] = (opacos[i * 2] - w / 2) * escala;
+        alvo[i * 3 + 1] = (ALTURA / 2 - opacos[i * 2 + 1]) * escala;
+        alvo[i * 3 + 2] = Math.sin(i * 7.13) * 0.22; // extrusão determinística
+
+        // Origem: casca esférica, o ponto "vem de longe" até a logo.
+        const t = (i / N) * Math.PI * 2;
+        const p = Math.acos(1 - (2 * (i + 0.5)) / N);
+        const r = 3.4;
+        origem[i * 3] = r * Math.sin(p) * Math.cos(t * 3.1);
+        origem[i * 3 + 1] = r * Math.cos(p);
+        origem[i * 3 + 2] = r * Math.sin(p) * Math.sin(t * 3.1);
+      }
+      resolve({ alvo, origem });
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function usePontosPato(): PontosPato | null {
+  const [pontos, setPontos] = useState<PontosPato | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    // Mascote primeiro; se faltar por qualquer motivo, cai pro duck.webp.
+    amostrarImagem("/pato-mascote.png").then((p) => {
+      if (p) {
+        if (vivo) setPontos(p);
+      } else {
+        amostrarImagem("/duck.webp").then((q) => vivo && q && setPontos(q));
+      }
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  return pontos;
+}
+
+/* ---------------------------------------------------------------
+   O pato: converge da esfera para a silhueta e gira devagar
+   --------------------------------------------------------------- */
+
+function Pato({ cor }: { cor: string }) {
+  const dados = usePontosPato();
+  const ref = useRef<THREE.Points>(null!);
+  const progresso = useRef(0);
+  // Buffer exibido começa na dispersão; o frame mixer vai interpolando.
+  const inicial = useMemo(
+    () => (dados ? new Float32Array(dados.origem) : null),
+    [dados],
+  );
 
   useFrame((_, delta) => {
-    malha.current.rotation.y += delta * 0.16;
-    malha.current.rotation.z += delta * 0.033;
+    if (!ref.current || !dados) return;
+    ref.current.rotation.y += delta * 0.28;
+
+    if (progresso.current >= 1) return;
+    progresso.current = Math.min(1, progresso.current + delta / 1.6);
+    const e = 1 - Math.pow(1 - progresso.current, 3); // easeOutCubic
+    const attr = ref.current.geometry.attributes.position as THREE.BufferAttribute;
+    const arr = attr.array as Float32Array;
+    for (let i = 0; i < arr.length; i++) {
+      arr[i] = dados.origem[i] + (dados.alvo[i] - dados.origem[i]) * e;
+    }
+    attr.needsUpdate = true;
   });
 
+  if (!dados || !inicial) return null;
   return (
-    <mesh ref={malha}>
-      <torusKnotGeometry args={[1.35, 0.38, 220, 28]} />
-      <meshBasicMaterial color={cor} wireframe transparent opacity={0.28} />
-    </mesh>
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[inicial, 3]} />
+      </bufferGeometry>
+      <pointsMaterial size={0.038} color={cor} transparent opacity={0.85} sizeAttenuation />
+    </points>
   );
 }
 
-/** Casca de ~900 pontos num invólucro esférico irregular, giro inverso. */
+/** Casca de fundo: pontos orbitando ao contrário, mais fracos que o pato. */
 function Particulas({ cor }: { cor: string }) {
   const pontos = useRef<THREE.Points>(null!);
 
   const posicoes = useMemo(() => {
-    const N = 900;
+    const N = 700;
     const arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const t = (i / N) * Math.PI * 2;
       const p = Math.acos(1 - (2 * (i + 0.5)) / N);
-      const jitter = Math.sin(i * 12.9898) * 0.09; // determinístico, sem Math.random
-      const r = 2.55 + jitter;
+      const r = 2.8 + Math.sin(i * 12.9898) * 0.12;
       arr[i * 3] = r * Math.sin(p) * Math.cos(t * 2.7);
       arr[i * 3 + 1] = r * Math.cos(p);
       arr[i * 3 + 2] = r * Math.sin(p) * Math.sin(t * 2.7);
@@ -83,8 +180,8 @@ function Particulas({ cor }: { cor: string }) {
   }, []);
 
   useFrame((_, delta) => {
-    pontos.current.rotation.y -= delta * 0.05;
-    pontos.current.rotation.x += delta * 0.011;
+    pontos.current.rotation.y -= delta * 0.045;
+    pontos.current.rotation.x += delta * 0.01;
   });
 
   return (
@@ -92,7 +189,7 @@ function Particulas({ cor }: { cor: string }) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[posicoes, 3]} />
       </bufferGeometry>
-      <pointsMaterial size={0.02} color={cor} transparent opacity={0.5} sizeAttenuation />
+      <pointsMaterial size={0.018} color={cor} transparent opacity={0.35} sizeAttenuation />
     </points>
   );
 }
@@ -119,17 +216,16 @@ function GrupoCena({ cor }: { cor: string }) {
 
   useFrame((state, delta) => {
     const g = grupo.current;
-    // Amortecimento independente de frame rate (k→1 suaviza, não acelera).
     const k = 1 - Math.pow(0.001, delta);
-    const alvoX = state.pointer.y * -0.22;
-    const alvoY = state.pointer.x * 0.32;
+    const alvoX = state.pointer.y * -0.2;
+    const alvoY = state.pointer.x * 0.28;
     g.rotation.x += (alvoX - g.rotation.x) * k;
     g.rotation.y += (alvoY - g.rotation.y) * k;
   });
 
   return (
     <group ref={grupo}>
-      <No cor={cor} />
+      <Pato cor={cor} />
       <Particulas cor={cor} />
     </group>
   );
@@ -141,7 +237,6 @@ export default function Cena3D() {
   const [naTela, setNaTela] = useState(true);
   const [abaVisivel, setAbaVisivel] = useState(true);
 
-  // Guard de WebGL: estado inicial já com o veredito, sem efeito.
   const [webgl] = useState(() => {
     try {
       if (typeof document === "undefined") return false;
@@ -166,15 +261,13 @@ export default function Cena3D() {
     };
   }, []);
 
-  // As saídas silenciosas da casa: movimento reduzido ou GPU ausente
-  // não viram placeholder — o painel simplesmente não existe.
   if (semMovimento() || !webgl) return null;
 
   return (
     <div
       ref={envolope}
       aria-hidden="true"
-      className="relative mt-4 h-[240px] overflow-hidden rounded-[var(--radius-sm)] border border-hairline bg-surface"
+      className="relative mt-4 h-[280px] overflow-hidden rounded-[var(--radius-sm)] border border-hairline bg-surface"
     >
       <Canvas
         dpr={[1, 1.5]}
@@ -185,7 +278,7 @@ export default function Cena3D() {
         <GrupoCena cor={cor} />
       </Canvas>
       <p className="pointer-events-none absolute bottom-2 left-3 mono text-[10px] text-ink-4">
-        o cofre, emaranhado — cena ambiental
+        o pato, em pontos — cena ambiental
       </p>
       <p className="pointer-events-none absolute bottom-2 right-3 mono text-[10px] text-ink-4">
         three + r3f
