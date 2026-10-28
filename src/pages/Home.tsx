@@ -8,7 +8,7 @@
    Com a busca ativa, a home deixa de ser um índice e passa a mostrar
    o resultado — assim o campo do cabeçalho funciona em qualquer rota. */
 
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import { Link } from "@/components/ui/linkInterno";
 import { ResourceList } from "@/components/ResourceRow";
@@ -20,9 +20,6 @@ import { plural } from "@/lib/recursos";
 import { cn } from "@/lib/cn";
 import { useContador, semMovimento } from "@/lib/animacoes";
 import { ComoFunciona } from "@/components/ComoFunciona";
-// Pato 3D do topo: mora em chunk separado (three); enquanto baixa,
-// o mascote estático segura o lugar sem pulo de layout.
-const PatoVigia3D = lazy(() => import("@/components/Pato3D"));
 import gsap from "gsap";
 
 /** Índice: grupos → subcategorias → recursos, como lista compacta. */
@@ -208,19 +205,13 @@ export default function Home() {
       {/* Faixa de abertura: pequena, informativa, sem slogan. */}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-hairline py-5">
         <div className="flex items-center gap-3">
-          <Suspense
-            fallback={
-              <img
-                src="/pato-mascote.png"
-                alt="Pato, mascote do JailbreakDN"
-                width={40}
-                height={40}
-                className="size-10 shrink-0 object-contain grayscale"
-              />
-            }
-          >
-            <PatoVigia3D />
-          </Suspense>
+          <img
+            src="/duck.webp"
+            alt="Pato, mascote do JailbreakDN"
+            width={40}
+            height={40}
+            className="size-10 object-contain grayscale"
+          />
           <div>
             <h1 className="text-[17px] font-semibold leading-tight tracking-tight text-ink">
               JailbreakDN
