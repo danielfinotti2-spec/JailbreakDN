@@ -1,4 +1,4 @@
-﻿/* Página inicial — o diretório aberto por padrão.
+/* Página inicial — o diretório aberto por padrão.
 
    Sem hero, sem slogan, sem estatística. A primeira coisa útil é o
    índice: cada grupo com suas subcategorias e os recursos listados em
@@ -20,6 +20,7 @@ import { plural } from "@/lib/recursos";
 import { cn } from "@/lib/cn";
 import { useContador, semMovimento } from "@/lib/animacoes";
 import { ComoFunciona } from "@/components/ComoFunciona";
+import { PatoVigia } from "@/components/PatoVigia";
 import gsap from "gsap";
 
 /** Índice: grupos → subcategorias → recursos, como lista compacta. */
@@ -205,13 +206,7 @@ export default function Home() {
       {/* Faixa de abertura: pequena, informativa, sem slogan. */}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-hairline py-5">
         <div className="flex items-center gap-3">
-          <img
-            src="/duck.webp"
-            alt="Pato, mascote do JailbreakDN"
-            width={40}
-            height={40}
-            className="size-10 object-contain grayscale"
-          />
+          <PatoVigia />
           <div>
             <h1 className="text-[17px] font-semibold leading-tight tracking-tight text-ink">
               JailbreakDN
