@@ -21,6 +21,7 @@ import { cn } from "@/lib/cn";
 import { useContador, semMovimento } from "@/lib/animacoes";
 import { ComoFunciona } from "@/components/ComoFunciona";
 import gsap from "gsap";
+import { useVisitas } from "@/hooks/useVisitas";
 
 /** Índice: grupos → subcategorias → recursos, como lista compacta. */
 function Indice() {
@@ -199,6 +200,8 @@ export default function Home() {
   const { busca, resultados } = useLibrary();
   const buscando = busca.trim().length > 0;
   const contadorRef = useContador<HTMLSpanElement>(RESOURCES.length);
+  const visitas = useVisitas();
+  const visitasRef = useContador<HTMLSpanElement>(visitas ?? 0);
 
   return (
     <div className="container-page">
@@ -222,6 +225,15 @@ export default function Home() {
                 {RESOURCES.length}
               </span>{" "}
               recursos.
+              {visitas !== null && (
+                <>
+                  {" "}
+                  <span ref={visitasRef} className="mono tabular-nums">
+                    {visitas}
+                  </span>{" "}
+                  visitas
+                </>
+              )}
             </p>
           </div>
         </div>
