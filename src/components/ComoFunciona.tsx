@@ -7,6 +7,7 @@
    Vem depois do índice na home (não antes), porque quem já sabe usar
    não deve rolar uma explicação para chegar ao conteúdo. */
 
+import { lazy, Suspense } from "react";
 import { ArrowRight, CornerDownLeft } from "lucide-react";
 import { Link } from "@/components/ui/linkInterno";
 import {
@@ -14,6 +15,10 @@ import {
   IlustracaoCategorias,
   IlustracaoSalvar,
 } from "@/components/Ilustracoes";
+
+// Painel 3D ambiental: chunk separado, baixa depois do primeiro paint.
+// O fallback é o próprio contorno do painel, mesmo tamanho, sem pulo.
+const Cena3D = lazy(() => import("@/components/Cena3D"));
 
 const PASSOS = [
   {
@@ -84,6 +89,17 @@ export function ComoFunciona() {
           </article>
         ))}
       </div>
+
+      <Suspense
+        fallback={
+          <div
+            aria-hidden="true"
+            className="mt-4 h-[240px] rounded-[var(--radius-sm)] border border-hairline bg-surface"
+          />
+        }
+      >
+        <Cena3D />
+      </Suspense>
 
       <p className="mt-3 flex items-center gap-1.5 text-[11px] text-ink-4">
         <CornerDownLeft className="size-3" aria-hidden="true" />
