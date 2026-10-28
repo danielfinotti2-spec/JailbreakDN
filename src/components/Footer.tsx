@@ -1,4 +1,4 @@
-﻿/* Rodapé — organizado em colunas em vez de uma faixa achatada.
+/* Rodapé — organizado em colunas em vez de uma faixa achatada.
 
    Antes tudo disputava a mesma linha de texto: marca, 119 recursos,
    cinco links, quatro redes e um parágrafo legal inteiro. Sem
@@ -19,6 +19,8 @@ import { ROTAS } from "@/lib/router";
 import { MARCA } from "@/data/perfil";
 import { RESOURCES } from "@/data/links";
 import { GRUPOS, TOTAL_SUBCATEGORIAS } from "@/data/categorias";
+import { useVisitas } from "@/hooks/useVisitas";
+import { useContador } from "@/lib/animacoes";
 
 const NAV = [
   { label: "Índice", href: ROTAS.inicio },
@@ -30,6 +32,10 @@ const NAV = [
 
 export default function Footer() {
   const externos = RESOURCES.filter((r) => !r.interno).length;
+  // Contagem pública de visitas (useVisitas) subindo do zero com a
+  // mesma animação do contador da marca (useContador).
+  const visitas = useVisitas();
+  const visitasRef = useContador<HTMLElement>(visitas ?? 0);
 
   return (
     <footer className="mt-12 border-t border-hairline">
@@ -95,6 +101,12 @@ export default function Footer() {
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-ink-3">Subcategorias</dt>
                 <dd className="mono text-ink-2">{TOTAL_SUBCATEGORIAS}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-3">Visitantes</dt>
+                <dd ref={visitasRef} aria-live="polite" className="mono text-ink-2">
+                  —
+                </dd>
               </div>
             </dl>
             <Link
