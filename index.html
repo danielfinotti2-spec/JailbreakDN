@@ -1,13 +1,36 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfbf9" />
+    <meta
+      name="description"
+      content="Cofre de TXT — biblioteca de prompts e catálogo de recursos externos com avisos de risco e fontes originais."
+    />
     <link rel="icon" href="/duck.webp" />
     <title>Cofre de TXT · @euodeene</title>
+    <!-- Applies the stored/system theme before first paint so there is no flash. -->
+    <script>
+      (function () {
+        try {
+          var k = "jb:theme",
+            s = localStorage.getItem(k),
+            d =
+              s === "light" || s === "dark"
+                ? s
+                : window.matchMedia("(prefers-color-scheme: dark)").matches
+                  ? "dark"
+                  : "light";
+          document.documentElement.dataset.theme = d;
+          document.documentElement.style.colorScheme = d;
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

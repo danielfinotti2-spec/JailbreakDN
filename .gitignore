@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.vite/
+
+# Local env (may hold the optional mascot model URL)
+.env
+.env.local
+.env.*.local
+
+# Playwright / test artefacts
+shots/
+test-results/
+playwright-report/
+
+.DS_Store
+Thumbs.db
+*.log

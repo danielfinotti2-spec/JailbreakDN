@@ -1,0 +1,76 @@
+/* ---------------------------------------------------------------
+   Design tokens — single source of truth.
+
+   Palette is built around the mascot's warm core against a cool
+   technical ground. Light and dark are both first-class: neither is
+   a filter of the other.
+   --------------------------------------------------------------- */
+
+@theme {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-warm: var(--warm);
+  --color-warm-soft: var(--warm-soft);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+
+  --font-display: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-body: "Inter Variable", Inter, system-ui, sans-serif;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+}
+
+/* Light — paper-warm white, cool grey rules, deep ink. */
+:root {
+  --canvas: #fbfbf9;
+  --surface: #ffffff;
+  --surface-2: #f2f2f0;
+  --ink: #12131a;
+  --ink-2: #5b5d68;
+  --ink-3: #8b8d97;
+  --hairline: #e3e3e0;
+  --accent: #2f4bd8;
+  --accent-ink: #ffffff;
+  --warm: #d97706;
+  --warm-soft: #fff4e2;
+  --danger: #b42318;
+  --warn: #92400e;
+
+  --shadow-soft: 0 1px 2px rgb(18 19 26 / 0.04), 0 8px 24px rgb(18 19 26 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(18 19 26 / 0.05), 0 18px 48px rgb(18 19 26 / 0.1);
+
+  color-scheme: light;
+}
+
+/* Dark — deep blue-black, not pure black; warmth stays. */
+[data-theme="dark"] {
+  --canvas: #0f1014;
+  --surface: #17181d;
+  --surface-2: #1f2026;
+  --ink: #f2f2f4;
+  --ink-2: #a6a8b2;
+  --ink-3: #767884;
+  --hairline: #2a2b32;
+  --accent: #8fa4ff;
+  --accent-ink: #0f1014;
+  --warm: #f5a524;
+  --warm-soft: #2a2113;
+  --danger: #f97066;
+  --warn: #fdb022;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.45), 0 18px 48px rgb(0 0 0 / 0.5);
+
+  color-scheme: dark;
+}
