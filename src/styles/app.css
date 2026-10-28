@@ -2,11 +2,11 @@
 @import "./tokens.css";
 
 /* ---------------------------------------------------------------
-   Base layer.
+   Base.
 
-   Plain CSS is used rather than @layer: with Tailwind v4 the utility
-   generation depends on the @import above, and wrapping rules in a
-   custom @layer suppressed the utilities that components rely on.
+   Tailwind v4 gera utilitários a partir do @import acima. As regras
+   de base ficam em @layer base para que os utilitários dos
+   componentes vençam sem precisar de !important.
    --------------------------------------------------------------- */
 
 @layer base {
@@ -16,50 +16,183 @@
   }
 
   body {
-    margin: 0;
     background: var(--canvas);
     color: var(--ink);
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    /* 450 em vez de 400/500: no escuro, 400 nos textos pequenos fica
+       lavado, e 500 (usado em quase todo componente) pesava a página
+       inteira. 450 assenta a Inter sem engrossar. */
+    font-weight: 450;
+    letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transition: background-color 220ms ease, color 220ms ease;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Números alinhados em coluna e zero cortado, para URLs e contagens. */
+  .mono,
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1, "zero" 1;
+    letter-spacing: 0;
+  }
+
+  /* Foco visível e monocromático. Nunca removido — só estilizado. */
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--accent) 26%, transparent);
+    background: var(--ink);
+    color: var(--canvas);
   }
 
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
-
+  /* Âncoras não ficam escondidas sob o cabeçalho fixo. */
   [id] {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: 88px;
+  }
+
+  /* Barra de rolagem discreta. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline-2) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--hairline-2);
+    border-radius: 999px;
+    border: 3px solid var(--canvas);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 
-.reveal-in {
-  animation: reveal-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--d, 0ms);
+/* ---------------------------------------------------------------
+   Utilitários próprios.
+   --------------------------------------------------------------- */
+
+@utility container-page {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+
+  @media (min-width: 768px) {
+    padding-inline: 1.75rem;
+  }
 }
 
-@keyframes reveal-in {
+/* Rótulo maiúsculo pequeno: usado em títulos de seção e metadados. */
+@utility label-caps {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Texto monoespaçado para URLs e domínios. */
+@utility mono {
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  font-variant-ligatures: none;
+}
+
+/* ---------------------------------------------------------------
+   Abertura do site.
+
+   O véu é escondido por CSS após 3s como rede de segurança: se o JS
+   falhar ou travar no meio da timeline, ninguém fica preso numa tela
+   preta. O GSAP normalmente remove o nó bem antes disso.
+   --------------------------------------------------------------- */
+
+.abertura-veu {
+  animation: veu-saida 1ms linear 3s forwards;
+}
+
+@keyframes veu-saida {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abertura-veu {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Movimento.
+
+   Só entrada de conteúdo, curta, e nada que mova a página. Toda
+   animação desaparece com prefers-reduced-motion.
+   --------------------------------------------------------------- */
+
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
+}
+
+@utility fade-in {
+  animation: fade-in 160ms ease-out both;
+}
+
+/* Em telas sem hover (toque) as ações da linha ficam sempre visíveis;
+   com mouse, elas aparecem no hover/foco para não poluir a lista. */
+@media (hover: none) {
+  .resource-row-actions {
+    opacity: 1 !important;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Halo que segue o cursor na linha.
+
+   As posições --mx/--my são escritas pelo GSAP via
+   requestAnimationFrame (lib/animacoes.ts), sem re-render de React.
+   O gradiente é mais largo que a linha para o brilho parecer
+   ambiente, não um holofote.
+   --------------------------------------------------------------- */
+
+[data-recurso]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    300px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--ink) 9%, transparent),
+    transparent 72%
+  );
+  transition: opacity 220ms ease-out;
+}
+
+[data-recurso].realcando::before {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
+
   *,
   *::before,
   *::after {
@@ -67,4 +200,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  [data-recurso]::before {
+    display: none;
+  }
 }
+
+

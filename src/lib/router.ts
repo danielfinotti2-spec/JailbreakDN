@@ -1,19 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /* ---------------------------------------------------------------
-   Minimal History-API router.
+   Router mínimo sobre a History API.
 
-   This replaces the original lib/nav.js. The old version could change
-   the URL without notifying listeners (Root.jsx called
-   history.replaceState directly), which left the rendered page out of
-   sync with location.pathname. Every navigation now flows through one
-   function that always dispatches.
+   Rotas servidas:
+     /                 início
+     /recursos         catálogo completo com filtros
+     /recurso/:id      detalhe de um recurso (URL compartilhável)
+     /favoritos        atalho para o catálogo filtrado
+     /categoria/:id    atalho para o catálogo por categoria
+
+   Toda navegação passa por `navigate`, que sempre dispara o evento —
+   assim o que está renderizado nunca discorda da barra de endereços.
    --------------------------------------------------------------- */
 
 const PATH_EVENT = "app:pathchange";
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {
-  if (to === window.location.pathname) return;
+  if (to === window.location.pathname + window.location.search) return;
   if (opts.replace) window.history.replaceState({}, "", to);
   else window.history.pushState({}, "", to);
   window.dispatchEvent(new Event(PATH_EVENT));
@@ -33,7 +37,6 @@ export function usePath(): string {
   return path;
 }
 
-/** Scroll a section into view, matching the sticky header offset. */
 export function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -42,8 +45,8 @@ export function scrollToId(id: string) {
 }
 
 /**
- * Click handler for in-app links. Honours modifier clicks so
- * middle-click / ctrl-click / new-tab still work natively.
+ * Handler para links internos. Respeita cliques com modificador para
+ * que ctrl+clique / abrir em nova aba continuem funcionando.
  */
 export function useNavHandler() {
   return useCallback((e: React.MouseEvent<HTMLAnchorElement>, to: string) => {
@@ -54,11 +57,10 @@ export function useNavHandler() {
       const id = to.slice(1);
       if (window.location.pathname !== "/") {
         navigate("/");
-        // Wait for the home route to mount before scrolling.
         requestAnimationFrame(() => setTimeout(() => scrollToId(id), 60));
       } else {
         scrollToId(id);
-        window.history.replaceState({}, "", `#${id}`);
+        window.history.replaceState({}, "", `/${to}`);
       }
       return;
     }
@@ -67,13 +69,13 @@ export function useNavHandler() {
   }, []);
 }
 
-/** The href a section link should carry so it is copyable and openable. */
+/** href real de um destino interno, para o link ser copiável. */
 export const hrefOf = (to: string) => (to.startsWith("#") ? `/${to}` : to);
 
-export function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T>(undefined);
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-}
+export const ROTAS = {
+  inicio: "/",
+  recursos: "/recursos",
+  favoritos: "/favoritos",
+  recurso: (id: string) => `/recurso/${id}`,
+  categoria: (id: string) => `/categoria/${id}`,
+} as const;

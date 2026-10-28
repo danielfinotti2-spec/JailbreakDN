@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 
 export type ThemeMode = "light" | "dark";
 const STORAGE_KEY = "jb:theme";
@@ -23,7 +23,7 @@ function applyTheme(mode: ThemeMode) {
   root.dataset.theme = mode;
   root.style.colorScheme = mode;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", mode === "dark" ? "#0f1014" : "#fbfbf9");
+  if (meta) meta.setAttribute("content", mode === "dark" ? "#0a0a0a" : "#ffffff");
 }
 
 /**
@@ -75,3 +75,4 @@ export function useTheme() {
 
 /** Inline script content for index.html — applies the theme before first paint. */
 export const THEME_BOOT_SCRIPT = `(function(){try{var k="jb:theme",s=localStorage.getItem(k),d=s==="light"||s==="dark"?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d;}catch(e){}})();`;
+

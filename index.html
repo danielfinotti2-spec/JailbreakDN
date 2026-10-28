@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#fbfbf9" />
+    <meta name="theme-color" content="#0b0b0d" />
     <meta
       name="description"
-      content="Cofre de TXT — biblioteca de prompts e catálogo de recursos externos com avisos de risco e fontes originais."
+      content="JailbreakDN — diretório de links por categoria: IA grátis, APIs, modelos, desenvolvimento, engenharia reversa, segurança, prompts e tutoriais."
     />
     <link rel="icon" href="/duck.webp" />
-    <title>Cofre de TXT · @euodeene</title>
+    <title>JailbreakDN — biblioteca de recursos</title>
     <!-- Applies the stored/system theme before first paint so there is no flash. -->
     <script>
       (function () {
@@ -30,7 +30,53 @@
     </script>
   </head>
   <body>
+    <!--
+      Véu da abertura. Fica no HTML, antes do React, para cobrir a tela
+      no primeiro paint. Montado pelo React ele só aparecia ~250ms
+      depois, e o efeito virava "conteúdo pisca, então tela preta".
+
+      O script decide na hora se ele deve existir: some em visitas
+      repetidas (sessionStorage) e para quem pediu menos movimento.
+      Se o JS falhar, o atributo hidden permanece e ninguém vê nada.
+    -->
+    <div
+      id="jbdn-veu"
+      hidden
+      style="
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        place-items: center;
+        background: #0a0a0a;
+      "
+    ></div>
+    <script>
+      (function () {
+        try {
+          var veu = document.getElementById("jbdn-veu");
+          var reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var jaViu = sessionStorage.getItem("jbdn:abertura") === "1";
+          if (reduz || jaViu) return;
+          var escuro = document.documentElement.dataset.theme === "dark";
+          veu.style.background = escuro ? "#0a0a0a" : "#ffffff";
+          veu.hidden = false;
+          // Rede de segurança: sem JS depois disto, o véu sai sozinho.
+          setTimeout(function () {
+            if (veu && veu.parentNode) {
+              veu.style.transition = "opacity .3s";
+              veu.style.opacity = "0";
+              setTimeout(function () {
+                veu.parentNode && veu.parentNode.removeChild(veu);
+              }, 320);
+            }
+          }, 2600);
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+
+

@@ -1,87 +1,96 @@
-# Cofre de TXT · @euodeene
+# JailbreakDN
 
-Site estático em React 19 + TypeScript + Vite 8. Reúne a biblioteca de prompts original e um
-catálogo de 40 recursos externos organizados em cinco categorias, com aviso de risco e origem.
+Portal pessoal de recursos digitais: um lugar para guardar, organizar, pesquisar e acessar links,
+ferramentas de IA, APIs, prompts, tutoriais e materiais técnicos.
 
-## Rodar localmente
+Não é um portfólio. É uma biblioteca: o conteúdo são os recursos, não a vitrine.
+
+## Stack
+
+React 19 · TypeScript (strict) · Vite 8 (Rolldown) · Tailwind CSS v4 · lucide-react · Radix Slot.
+
+Sem framework de UI pesada, sem 3D, sem serviço externo para dados essenciais. Tudo funciona a
+partir de arquivos locais.
+
+## Rodar
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev        # http://localhost:5173
+npm run build      # tsc -b + vite build
+npm run preview    # serve o build
 ```
 
-## Build e preview
+## Dados — fonte única
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| `src/data/links.ts` | **Todo** o catálogo: 112 recursos, 9 categorias, tipos, tags, risco, avisos. |
+| `src/data/prompts.js` | Os 16 prompts originais, preservados sem alteração. |
+| `src/data/perfil.ts` | Marca e redes sociais (Instagram, GitHub, Discord, site). |
+
+Para adicionar um link, basta inserir um objeto em `RESOURCES`. Categoria, contagens, filtros,
+busca e ordenação se atualizam sozinhos — não há número digitado à mão em nenhum lugar.
+
+### Esquema de um recurso
+
+```ts
+{
+  id: "ghidra",                      // único, usado na URL /recurso/ghidra
+  nome: "Ghidra",
+  url: "https://ghidra-sre.org",     // exatamente como cadastrada
+  categoriaIds: ["re"],              // pode ter mais de uma
+  subcategoria: "Decompilador",
+  origem: "NSA",
+  descricao: "…",                    // em português
+  tipo: "ferramenta",                // site|api|ferramenta|repositorio|video|download|artigo|prompt
+  tags: ["re", "decompilador"],
+  verificado: false,                 // true só se a página foi realmente consultada
+  conta: "desconhecido",             // true | false | "desconhecido"
+  risco: "none",                     // none | caution | high  (high exige `avisos`)
+  adicionadoEm: "2026-02-10",
+}
+```
+
+## Rotas
+
+| Rota | Página |
+| --- | --- |
+| `/` | Início: boas-vindas, busca, categorias, recentes, favoritos, atalhos, números reais |
+| `/recursos` | Catálogo com busca, filtros e ordenação |
+| `/categoria/:id` | Uma das 9 categorias |
+| `/categorias` | Visão geral das categorias |
+| `/recurso/:id` | Detalhe: URL completa, avisos, verificação, relacionados |
+| `/favoritos` | Só o que você marcou neste navegador |
+| `/prompts` | Os 16 prompts, com leitura, cópia e download |
+| `/prompt/:id` | Um prompt específico |
+
+Filtros combináveis por URL: `?q=`, `?cat=`, `?tipo=`, `?risco=alto`.
+
+## O que o site não faz
+
+Regras seguidas na montagem, para que a interface não minta:
+
+- **Não inventa estatística.** Não existe contador de visitas, curtidas ou "mais populares". A
+  seção de favoritos é a sua lista local, guardada em `localStorage` — ninguém mais a vê.
+- **Não inventa link.** Nenhuma URL substituta é criada quando um endereço parece fora do ar.
+  Parâmetros de indicação e convite são preservados como vieram.
+- **Não afirma verificação que não houve.** `verificado: true` significa que a página foi
+  consultada durante o catálogo. Os 47 links adicionados sem consulta aparecem como
+  "descrição não verificada".
+- **Não baixa nada sozinho.** Downloads e arquivos abrem a página de origem em nova aba.
+- **Não declara nada malicioso sem evidência.** Onde há risco, o aviso diz o que se sabe e o que
+  não se sabe.
+
+## Verificação
 
 ```bash
-npm run typecheck    # tsc -b --noEmit
-npm run build        # tsc -b && vite build  -> dist/
-npm run preview
+npm run preview          # em outro terminal, na porta 4180
+npm run test:all
 ```
 
-`dist/` é estático: publica em Vercel, Netlify ou GitHub Pages. Não há backend.
-O `vercel.json` já traz `cleanUrls` e o rewrite de SPA, então rotas profundas
-(`/produtos/algum-slug`) são servidas para o roteador do app.
-
-## Testes
-
-Os testes dirigem um Chrome real via Playwright. Suba o app antes
-(`npm run dev` ou `npm run preview`) e rode:
-
-```bash
-npm run test:e2e         # 35 checagens: rotas, busca, filtros, favoritos, tema, links, 3D
-npm run test:fallbacks   # 9 checagens: WebGL desligado, reduced-motion, foco, 404 profundo
-npm run test:layout      # 11 checagens: hero, player 16:9, nav flutuante, desktop e mobile
-```
-
-Para testar o build de produção em vez do dev server:
-
-```bash
-npm run preview
-# noutro terminal:
-$env:BASE="http://localhost:4173"; npm run test:e2e    # PowerShell
-BASE=http://localhost:4173 npm run test:e2e            # bash
-```
-
-## Estrutura
-
-```
-src/
-  Root.tsx              tabela de rotas (/, /produtos, /produtos/:slug, senão 404)
-  lib/router.ts         router por History API + evento app:pathchange
-  data/
-    links.ts            catálogo — fonte única dos 40 recursos
-    prompts.js          conteúdo original dos prompts (preservado, não editado)
-    library.ts          fachada tipada sobre prompts.js
-  components/           Hero, Catalog, Player, PromptLibrary, NotFound, Shop, FloatingNav
-  scenes/DuckScene.tsx  Canvas com WebGL fallback, lazy e reduced-motion
-  scenes/Mascot.tsx     mascote procedural (formas primitivas + animação)
-  styles/tokens.css     tokens de cor/tipografia, light e dark
-```
-
-## Sobre o mascote 3D
-
-O mascote é **procedural**: construído com esferas, cone e toros em código, com animação
-calculada por frame (respiração, piscada, balanço de cabeça, asas, inércia de mouse). Não é um
-modelo esculpido nem escaneado do desenho original.
-
-Para usar um modelo real, exporte um `.glb` e defina `VITE_DUCK_MODEL_URL` no `.env`:
-
-```
-VITE_DUCK_MODEL_URL=/models/duck.glb
-```
-
-Sem essa variável nenhuma requisição é feita para um arquivo inexistente. A imagem
-`public/pato-mascote.png` é a referência original, mantida no repositório.
-
-## Degradação
-
-- Sem WebGL: o hero troca o canvas pela ilustração estática (`public/duck.webp`).
-- Pouco movimento (`prefers-reduced-motion`): animações e scroll suave são desligados.
-- Aba em segundo plano: o loop de render é pausado pelo `Canvas` do R3F.
-
-## Avisos
-
-Os links do catálogo apontam para sites de terceiros, cada um com sua própria política. Vários
-foram classificados como risco alto (revenda de acesso a modelos, arquivos de origem desconhecida,
-ferramentas ofensivas). As descrições indicam quando a página **não** pôde ser verificada. Nada é
-hospedado, espelhado ou recomendado por este site.
+- `scripts/verify.cjs` — 42 checagens funcionais: busca, filtros, categorias, favoritos após
+  recarregar, copiar URL, abrir recurso, tema, menu mobile, estados vazios, console, overflow em
+  1440/1920/390.
+- `scripts/verify-dados.cjs` — 11 checagens de integridade: os 49 links originais presentes,
+  nenhuma URL duplicada ou vazia, `href="#"` ausente, risco alto sempre com aviso, prompts intactos.

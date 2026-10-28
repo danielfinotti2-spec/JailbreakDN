@@ -1,60 +1,122 @@
-﻿import { MessageCircle } from "lucide-react";
-import { CREATOR, FOOTER_DATA } from "@/data/library";
-import type { MouseEvent } from "react";
-import { useNavHandler } from "@/lib/router";
+﻿/* Rodapé — organizado em colunas em vez de uma faixa achatada.
 
-/* lucide v1 removed brand icons, so social links use a neutral glyph
-   plus the network name — clearer for screen readers anyway. */
-const LABEL: Record<string, string> = {
-  github: "GitHub",
-  x: "X",
-  ig: "Instagram",
-};
+   Antes tudo disputava a mesma linha de texto: marca, 119 recursos,
+   cinco links, quatro redes e um parágrafo legal inteiro. Sem
+   hierarquia, lê-se como um bloco só.
+
+   Agora:
+     coluna 1  marca, contagem e as redes (identidade)
+     coluna 2  navegação curta
+     coluna 3  estado do acervo, com os números reais do catálogo
+     faixa     o aviso legal, em duas frases curtas
+
+   Nada de cota, preço ou estatística inventada: os números vêm do
+   próprio dataset. */
+
+import { Link } from "@/components/ui/linkInterno";
+import { SocialLinks } from "@/components/SocialLinks";
+import { ROTAS } from "@/lib/router";
+import { MARCA } from "@/data/perfil";
+import { RESOURCES } from "@/data/links";
+import { GRUPOS, TOTAL_SUBCATEGORIAS } from "@/data/categorias";
+
+const NAV = [
+  { label: "Índice", href: ROTAS.inicio },
+  { label: "Todos os recursos", href: ROTAS.recursos },
+  { label: "Categorias", href: "/categorias" },
+  { label: "Favoritos", href: ROTAS.favoritos },
+  { label: "Prompts", href: "/prompts" },
+];
 
 export default function Footer() {
-  const onNav = useNavHandler();
+  const externos = RESOURCES.filter((r) => !r.interno).length;
+
   return (
-    <footer className="border-t border-hairline px-5 pb-28 pt-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-6">
-        <div>
-          <p className="text-sm font-semibold text-ink">{CREATOR.name}</p>
-          <p className="mt-1 max-w-md text-xs leading-relaxed text-ink-3">{FOOTER_DATA.text}</p>
+    <footer className="mt-12 border-t border-hairline">
+      <div className="container-page">
+        <div className="grid gap-8 py-8 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
+          {/* Identidade */}
+          <div>
+            <Link
+              href={ROTAS.inicio}
+              className="inline-flex items-center gap-2"
+              aria-label={`${MARCA.nome} — início`}
+            >
+              <img
+                src="/duck.webp"
+                alt=""
+                width={20}
+                height={20}
+                className="size-5 object-contain grayscale"
+              />
+              <span className="mono text-[12.5px] font-medium text-ink">{MARCA.nome}</span>
+            </Link>
+            <p className="mt-1.5 max-w-[34ch] text-[11.5px] leading-relaxed text-ink-3">
+              Diretório de links organizado por categoria — IA, APIs, desenvolvimento,
+              engenharia reversa, segurança e prompts.
+            </p>
+            <div className="mt-4">
+              <SocialLinks variante="chips" />
+            </div>
+          </div>
+
+          {/* Navegação */}
+          <nav aria-label="Rodapé">
+            <p className="label-caps">Navegar</p>
+            <ul className="mt-2 space-y-1.5">
+              {NAV.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="text-[12px] text-ink-3 hover:text-ink">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Acervo: números reais, nada estimado */}
+          <div>
+            <p className="label-caps">O acervo</p>
+            <dl className="mt-2 space-y-1.5 text-[12px]">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-3">Recursos</dt>
+                <dd className="mono text-ink-2">{RESOURCES.length}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-3">Links externos</dt>
+                <dd className="mono text-ink-2">{externos}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-3">Categorias</dt>
+                <dd className="mono text-ink-2">
+                  {GRUPOS.length}/{TOTAL_SUBCATEGORIAS}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-ink-3">Subcategorias</dt>
+                <dd className="mono text-ink-2">{TOTAL_SUBCATEGORIAS}</dd>
+              </div>
+            </dl>
+            <Link
+              href="/categorias"
+              className="mt-3 inline-block text-[11.5px] text-ink-4 hover:text-ink-2"
+            >
+              ver a estrutura completa →
+            </Link>
+          </div>
         </div>
 
-        <nav aria-label="Rodapé" className="flex flex-wrap gap-4">
-          {FOOTER_DATA.nav.map(([label, to]) => (
-            <a
-              key={label}
-              href={to.startsWith("#") ? `/${to}` : to}
-              onClick={(e: MouseEvent<HTMLAnchorElement>) => onNav(e, to)}
-              className="text-xs font-medium text-ink-2 transition-colors hover:text-ink"
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          {CREATOR.links.map(([key, url]) => (
-            <a
-              key={key}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={LABEL[key] ?? key}
-              title={LABEL[key] ?? key}
-              className="grid size-9 place-items-center rounded-full border border-hairline text-ink-2 transition-colors hover:border-ink/25 hover:text-ink"
-            >
-              <MessageCircle className="size-4" aria-hidden="true" />
-            </a>
-          ))}
+        {/* Aviso legal: duas frases, não um parágrafo */}
+        <div className="border-t border-hairline py-4">
+          <p className="max-w-[76ch] text-[10.5px] leading-relaxed text-ink-4">
+            Os recursos abrem sites de terceiros, com regras próprias — nada é hospedado aqui.
+            Preços, cotas e limites mudam sem aviso: confirme no site de origem antes de contar
+            com eles.
+          </p>
         </div>
       </div>
-      <p className="mx-auto mt-8 w-full max-w-6xl text-[11px] text-ink-3">
-        © {new Date().getFullYear()} {CREATOR.name}. Conteúdo de terceiros pertence aos respectivos
-        autores.
-      </p>
     </footer>
   );
 }
+
 

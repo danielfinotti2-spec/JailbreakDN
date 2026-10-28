@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test:e2e": "node scripts/verify.cjs",
-    "test:fallbacks": "node scripts/verify2.cjs",
-    "test:layout": "node scripts/verify3.cjs"
+    "test:dados": "node scripts/verify-dados.cjs",
+    "test:all": "node scripts/verify.cjs && node scripts/verify-dados.cjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.1.0",
@@ -25,6 +25,7 @@
     "motion": "^14.7.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "simple-icons": "^16.36.0",
     "tailwind-merge": "^3.7.0",
     "three": "^0.186.1"
   },
